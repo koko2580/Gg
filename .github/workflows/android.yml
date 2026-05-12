@@ -43,13 +43,13 @@ jobs:
           rm -f gradlew
           gradle wrapper --gradle-version 8.2.1
           chmod +x ./gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --no-daemon
 
       - name: Build Android App Bundle (AAB)
         run: |
           cd android
           chmod +x ./gradlew
-          ./gradlew bundleRelease
+          ./gradlew bundleRelease --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
