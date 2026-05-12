@@ -36,8 +36,8 @@ export const showBanner = async () => {
     await AdMob.showBanner({
       adId: ADMOB_IDS.banner,
       adSize: BannerAdSize.ADAPTIVE_BANNER,
-      position: BannerAdPosition.BOTTOM_CENTER,
-      margin: 100, // Account for BottomNav height
+      position: BannerAdPosition.TOP_CENTER,
+      margin: 0,
       isTesting: false
     });
   } catch (err) {

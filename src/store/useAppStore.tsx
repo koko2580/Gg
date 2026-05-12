@@ -84,7 +84,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const processDownload = async (id: string, url: string, format: string) => {
     try {
       const isCapacitor = window.location.origin.includes('localhost') || window.location.protocol === 'capacitor:';
-      const baseUrl = isCapacitor ? 'https://ais-pre-n4wyrew4fjm2z5zcz5sbnw-436071492721.asia-southeast1.run.app' : '';
+      const baseUrl = isCapacitor ? 'https://ais-pre-vvndohw3heoqtxdk67cusa-436071492721.asia-southeast1.run.app' : '';
 
       // 1. Extract URL via backend
       const extractRes = await fetch(`${baseUrl}/api/extract`, {

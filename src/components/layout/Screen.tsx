@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { motion } from "motion/react";
 import BottomNav from "./BottomNav";
+import { cn } from "../../lib/utils";
 
 interface ScreenProps {
   children: ReactNode;
@@ -17,7 +18,7 @@ export default function Screen({ children, title, hideNav = false }: ScreenProps
 
       <div className="w-full max-w-md flex-1 flex flex-col relative z-10">
         {title && (
-          <header className="px-6 py-8 pb-4 sticky top-0 bg-[var(--color-background)]/80 backdrop-blur-md z-40">
+          <header className="px-6 pt-16 pb-4 sticky top-0 bg-[var(--color-background)]/80 backdrop-blur-md z-40">
             <h1 className="text-3xl font-bold tracking-tight text-gradient">{title}</h1>
           </header>
         )}
@@ -26,7 +27,7 @@ export default function Screen({ children, title, hideNav = false }: ScreenProps
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
-          className="flex-1 overflow-y-auto px-4 pb-32"
+          className={cn("flex-1 overflow-y-auto px-4 pb-32", !title && "pt-16")}
         >
           {children}
         </motion.main>
