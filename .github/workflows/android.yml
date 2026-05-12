@@ -39,17 +39,16 @@ jobs:
       - name: Build Android App (APK)
         run: |
           cd android
-          rm -f gradle/wrapper/gradle-wrapper.jar
-          rm -f gradlew
-          gradle wrapper --gradle-version 8.2.1
+          rm -rf ~/.gradle/caches
           chmod +x ./gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew clean --no-daemon
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Build Android App Bundle (AAB)
         run: |
           cd android
           chmod +x ./gradlew
-          ./gradlew bundleRelease --no-daemon
+          ./gradlew bundleRelease --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
