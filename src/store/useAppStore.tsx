@@ -83,19 +83,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const processDownload = async (id: string, url: string, format: string) => {
     try {
+      let extractData: any;
       const isCapacitor = window.location.origin.includes('localhost') || window.location.protocol === 'capacitor:';
       const baseUrl = isCapacitor ? 'https://ais-pre-vvndohw3heoqtxdk67cusa-436071492721.asia-southeast1.run.app' : '';
 
-      // 1. Extract URL via backend
-      const extractRes = await fetch(`${baseUrl}/api/extract`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, format })
-      });
+      // Try direct client-side extraction for TikTok first since backend might have auth/cors issues on device
+      if (url.includes('tiktok.com')) {
+         try {
+           const params = new URLSearchParams({ url, hd: "1" });
+           const req = await fetch("https://tikwm.com/api/?" + params.toString());
+           const res = Object.keys(req).length > 0 ? await req.json() : {};
+           
+           if (res?.code === 0 && res?.data?.play) {
+             extractData = {
+               title: (res.data.title || "TikTok Video").slice(0, 50),
+               thumbnail: res.data.cover,
+               url: res.data.play,
+               platform: "tiktok"
+             };
+           }
+         } catch(e) {
+             console.error("Direct fallback failed", e);
+         }
+      }
       
-      if (!extractRes.ok) throw new Error("Extraction failed");
-      const extractData = await extractRes.json();
-      
+      // Use backend if tiktok direct failed or for other platforms
+      if (!extractData) {
+        const extractRes = await fetch(`${baseUrl}/api/extract`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url, format })
+        });
+        
+        if (!extractRes.ok) throw new Error("Extraction failed on backend");
+        extractData = await extractRes.json();
+      }
+
       setDownloads(prev => prev.map(d => d.id === id ? {
         ...d,
         title: extractData.title || `TokSave_Video_${Date.now()}`,
@@ -106,36 +129,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!extractData.url) {
         throw new Error("No URL returned from extraction API");
       }
-      // 2. Fetch the actual blob to bypass CORS & save
-      const proxyUrl = `${baseUrl}/api/download-blob?url=${encodeURIComponent(extractData.url)}`;
-      
-      let progress = 10;
+
+      // Progress simulation
+      let animProgress = 10;
       const interval = setInterval(() => {
-        progress += Math.floor(Math.random() * 5);
-        if (progress > 90) progress = 90;
-        setDownloads(prev => prev.map(d => d.id === id && d.status === 'downloading' ? { ...d, progress } : d));
+        animProgress += Math.floor(Math.random() * 5);
+        if (animProgress > 90) animProgress = 90;
+        setDownloads(prev => prev.map(d => d.id === id && d.status === 'downloading' ? { ...d, progress: animProgress } : d));
       }, 500);
 
-      const blobRes = await fetch(proxyUrl);
-      clearInterval(interval);
-      
-      if (!blobRes.ok) {
-        const errText = await blobRes.text();
-        throw new Error(`Blob fetch failed: ${errText}`);
-      }
-      const blob = await blobRes.blob();
-      const objectUrl = window.URL.createObjectURL(blob);
+      try {
+        // If we are getting TikTok video from TikWM, it usually allows CORS, we can fetch it directly
+        const isDirectDownloadOk = extractData.platform === 'tiktok';
+        const fetchUrl = isDirectDownloadOk ? extractData.url : `${baseUrl}/api/download-blob?url=${encodeURIComponent(extractData.url)}`;
+        
+        const blobRes = await fetch(fetchUrl);
+        clearInterval(interval);
+        
+        if (!blobRes.ok) throw new Error(`Blob fetch failed`);
+        const blob = await blobRes.blob();
+        const objectUrl = window.URL.createObjectURL(blob);
 
-      // Trigger actual browser download
-      const a = document.createElement('a');
-      a.href = objectUrl;
-      a.download = `TokSave_${Date.now()}.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      
-      // Keep object url valid for a while, ideally should handle cleanup better in a real app
-      setTimeout(() => window.URL.revokeObjectURL(objectUrl), 60000);
+        // Trigger browser download
+        const a = document.createElement('a');
+        a.href = objectUrl;
+        a.download = `TokSave_${Date.now()}.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => window.URL.revokeObjectURL(objectUrl), 60000);
+      } catch(blobErr) {
+        clearInterval(interval);
+        // If Blob fetch fails (due to CORS maybe), fallback to opening url in new tab or Capacitor Browser natively
+        if ((window as any).Capacitor) {
+          window.open(extractData.url, '_system');
+        } else {
+          window.open(extractData.url, '_blank');
+        }
+      }
 
       setDownloads(prev => prev.map(d => d.id === id ? {
         ...d,

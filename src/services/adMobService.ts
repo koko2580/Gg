@@ -36,8 +36,8 @@ export const showBanner = async () => {
     await AdMob.showBanner({
       adId: ADMOB_IDS.banner,
       adSize: BannerAdSize.ADAPTIVE_BANNER,
-      position: BannerAdPosition.TOP_CENTER,
-      margin: 0,
+      position: BannerAdPosition.BOTTOM_CENTER,
+      margin: 90, // Large margin to clear bottom nav which is around 60-80px tall
       isTesting: false
     });
   } catch (err) {
