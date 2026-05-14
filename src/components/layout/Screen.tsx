@@ -10,6 +10,8 @@ interface ScreenProps {
 }
 
 export default function Screen({ children, title, hideNav = false }: ScreenProps) {
+  const isNative = typeof window !== 'undefined' && (window as any).Capacitor && (window as any).Capacitor.isNativePlatform();
+
   return (
     <div className="min-h-screen bg-[var(--color-background)] flex flex-col items-center relative overflow-hidden">
       {/* Decorative gradient glowing orb */}
@@ -27,7 +29,7 @@ export default function Screen({ children, title, hideNav = false }: ScreenProps
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
-          className={cn("flex-1 overflow-y-auto px-4 pb-32", !title && "pt-16")}
+          className={cn("flex-1 overflow-y-auto px-4", isNative ? "pb-44" : "pb-32", !title && "pt-16")}
         >
           {children}
         </motion.main>

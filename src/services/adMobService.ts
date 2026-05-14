@@ -37,7 +37,7 @@ export const showBanner = async () => {
       adId: ADMOB_IDS.banner,
       adSize: BannerAdSize.ADAPTIVE_BANNER,
       position: BannerAdPosition.BOTTOM_CENTER,
-      margin: 90, // Large margin to clear bottom nav which is around 60-80px tall
+      margin: 0,
       isTesting: false
     });
   } catch (err) {

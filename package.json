@@ -16,6 +16,8 @@
     "@capacitor/android": "^8.3.3",
     "@capacitor/cli": "^8.3.3",
     "@capacitor/core": "^8.3.3",
+    "@capacitor/file-transfer": "^2.0.4",
+    "@capacitor/filesystem": "^8.1.2",
     "@distube/ytdl-core": "^4.16.12",
     "@google/genai": "^1.29.0",
     "@radix-ui/react-dialog": "^1.1.15",

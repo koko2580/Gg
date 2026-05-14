@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { DownloadItem, AppSettings } from '../types';
+import { FileTransfer } from '@capacitor/file-transfer';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 
 interface AppContextType {
   downloads: DownloadItem[];
@@ -139,28 +141,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }, 500);
 
       try {
-        // If we are getting TikTok video from TikWM, it usually allows CORS, we can fetch it directly
-        const isDirectDownloadOk = extractData.platform === 'tiktok';
-        const fetchUrl = isDirectDownloadOk ? extractData.url : `${baseUrl}/api/download-blob?url=${encodeURIComponent(extractData.url)}`;
-        
-        const blobRes = await fetch(fetchUrl);
-        clearInterval(interval);
-        
-        if (!blobRes.ok) throw new Error(`Blob fetch failed`);
-        const blob = await blobRes.blob();
-        const objectUrl = window.URL.createObjectURL(blob);
+        const isCapacitorNative = (window as any).Capacitor && (window as any).Capacitor.getPlatform() !== 'web';
+        const downloadDest = `TokSave_${Date.now()}.${format}`;
+        const fetchUrl = (extractData.platform === 'tiktok') ? extractData.url : `${baseUrl}/api/download-blob?url=${encodeURIComponent(extractData.url)}`;
 
-        // Trigger browser download
-        const a = document.createElement('a');
-        a.href = objectUrl;
-        a.download = `TokSave_${Date.now()}.${format}`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => window.URL.revokeObjectURL(objectUrl), 60000);
+        if (isCapacitorNative) {
+           const fileInfo = await Filesystem.getUri({
+             directory: Directory.Documents,
+             path: downloadDest
+           });
+
+           await FileTransfer.downloadFile({
+             url: fetchUrl,
+             path: fileInfo.uri,
+             progress: false
+           });
+           clearInterval(interval);
+        } else {
+           const blobRes = await fetch(fetchUrl);
+           clearInterval(interval);
+           
+           if (!blobRes.ok) throw new Error(`Blob fetch failed`);
+           const blob = await blobRes.blob();
+           const objectUrl = window.URL.createObjectURL(blob);
+
+           // Trigger browser download
+           const a = document.createElement('a');
+           a.href = objectUrl;
+           a.download = downloadDest;
+           document.body.appendChild(a);
+           a.click();
+           a.remove();
+           setTimeout(() => window.URL.revokeObjectURL(objectUrl), 60000);
+        }
       } catch(blobErr) {
         clearInterval(interval);
-        // If Blob fetch fails (due to CORS maybe), fallback to opening url in new tab or Capacitor Browser natively
+        // If everything fails, fallback to opening url in new tab or Capacitor Browser natively
         if ((window as any).Capacitor) {
           window.open(extractData.url, '_system');
         } else {
